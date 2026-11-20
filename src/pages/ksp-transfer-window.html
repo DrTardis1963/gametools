@@ -1,0 +1,132 @@
+<!--{"title": "KSP Transfer Window and Phase Angle Calculator (Every Stock Planet)", "short": "Transfer window calculator", "description": "Phase angle, ejection burn, ejection angle and the next launch window for a Hohmann transfer between any two Kerbal Space Program planets or moons, from your in-game date. KSP 1.12.5 stock data.", "card": "Phase angle, ejection burn and the next launch window for any two planets or moons.", "game": "Kerbal Space Program", "order": 21}-->
+<h1>KSP transfer window calculator</h1>
+<p class="version">Game data: KSP 1.12.5 (stock)</p>
+<p class="lede">When to leave, where in your orbit to burn, and how much delta-v the burn needs, for any two planets around Kerbol or any two moons of the same planet.</p>
+
+<style>
+.orbit-svg { display: block; width: 100%; max-width: 260px; height: auto; margin: 8px auto 0; }
+.orbit-svg .o { fill: none; stroke: var(--line); stroke-width: 1.5; }
+.orbit-svg .t { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.orbit-svg text { fill: var(--muted); font: 12px system-ui, sans-serif; }
+</style>
+<div class="calc-card">
+<form class="calc" id="tw">
+  <label>From <select name="from" id="tw-from"></select></label>
+  <label>To <select name="to" id="tw-to"></select></label>
+  <label>Parking orbit altitude (km) <small>circular orbit you burn from</small>
+    <input type="number" name="alt" value="100" min="0" step="any" inputmode="decimal">
+  </label>
+  <label>Game date: year
+    <input type="number" name="year" value="1" min="1" step="1" inputmode="numeric">
+  </label>
+  <label>Day <small>1 to 426</small>
+    <input type="number" name="day" value="1" min="1" max="426" step="1" inputmode="numeric">
+  </label>
+  <label>Hour <small>0 to 5 (Kerbin days are 6 hours)</small>
+    <input type="number" name="hour" value="0" min="0" max="5" step="1" inputmode="numeric">
+  </label>
+</form>
+<div class="result" id="tw-out" aria-live="polite"></div>
+</div>
+{{ad}}
+
+<h2>How it works</h2>
+<p>The cheapest way between two circular orbits around the same body is a <strong>Hohmann transfer</strong>: half an ellipse that just touches both orbits. You leave from one side of it and arrive on the far side, so the target has to be in the right place when you set off. That is the <strong>phase angle</strong>: how far ahead of you (positive) or behind you (negative) the target must be, measured around the parent body.</p>
+<div class="callout">Transfer time t = π × √(a³ ÷ μ), where a = (r₁ + r₂) ÷ 2<br>Phase angle = 180° − (target's angular speed × t)<br>Ejection burn = √(v∞² + 2μ ÷ r) − √(μ ÷ r)</div>
+<p>Here r₁ and r₂ are the two orbits' radii, μ is the parent body's gravitational parameter, and v∞ is the extra speed you need once you have escaped your starting planet. You don't burn v∞ directly: you burn from a low parking orbit, where the planet's own gravity well gives you some of it for free (the Oberth effect). That is why the burn from a 100 km Kerbin orbit is smaller than you might guess.</p>
+<p>The <strong>ejection angle</strong> says where in your parking orbit to burn so that you leave the planet's sphere of influence heading the right way. For a target farther from the parent (Duna, Jool), you need to exit along your planet's direction of travel, so you burn on the side facing away from it. For a target closer in (Eve, Moho), you exit backwards and burn on the other side.</p>
+<p>The <strong>next window</strong> comes from each body's starting position in the game's data (its position at Year 1, Day 1) and its orbital speed. The calculator finds when the angle between them next equals the phase angle.</p>
+
+<h2>Worked example: Kerbin to Duna</h2>
+<p>Kerbin orbits Kerbol at 13.6 Gm, Duna at 20.7 Gm. The transfer ellipse's semi-major axis is their average, 17.2 Gm, so the trip takes half its period: <strong>302 days</strong>. In that time Duna moves 135.6° round its orbit, so it must start 180° − 135.6° = <strong>44.36° ahead</strong> of Kerbin.</p>
+<p>Leaving Kerbin's sphere of influence takes v∞ = 918 m/s. From a 100 km orbit, where you are already moving at 2,246 m/s, the burn is √(918² + 2 × 3.5316×10¹² ÷ 700,000) − 2,246 = <strong>1,060 m/s</strong>. The escape path bends 149° from the burn point, so burn when your ship is <strong>149° from Kerbin's prograde direction</strong>: 31° after it passes Kerbin's retrograde side. You arrive at Duna about 826 m/s faster than Duna itself, which you'll need to cancel with a capture burn or aerobraking.</p>
+<p>At the start of a new game Duna is 135.5° ahead of Kerbin. The angle closes slowly, and the first window comes on <strong>Year 1, Day 231</strong>. After that, windows repeat every 909 days, the synodic period, so the next is Year 3, Day 288.</p>
+
+<h2>What this leaves out</h2>
+<ul>
+<li><strong>Eccentric orbits.</strong> The maths treats every orbit as a circle at its average distance. That is close for Kerbin, Eve, Duna and Jool. For Moho, Dres, Eeloo, Gilly, Bop and Pol, whose orbits are noticeably oval, the best window and burn can be off by days and by a hundred m/s or more. Use the result as a starting point and fine-tune with a manoeuvre node.</li>
+<li><strong>Inclination.</strong> Moho (7°), Dres (5°), Eeloo (6.15°) and Minmus (6°) orbit at a tilt. Plan a mid-course plane change at the ascending or descending node, or the encounter will miss.</li>
+<li><strong>Capture.</strong> The arrival speed shown is relative to the target as you enter its sphere of influence. The burn to stop depends on how low you capture.</li>
+<li><strong>From Kerbin to its own moons.</strong> The Mun and Minmus orbit Kerbin, so they don't pair with planets here. For a Mun trip, the usual rule is to burn when the Mun is about a quarter-orbit ahead of you.</li>
+</ul>
+
+<h2>Tips</h2>
+<ul>
+<li>Time warp to a few days before the window, then make a manoeuvre node at the ejection angle and nudge it until the map shows an encounter.</li>
+<li>Look up the date in game from the clock in the top-left corner (in Kerbin time, with 6-hour days). If your game uses 24-hour Earth days, convert the date first.</li>
+<li>Missed a window? Jool and Eeloo windows come round about once a Kerbin year; Duna's only every 2.1 years.</li>
+</ul>
+<p class="sources">Sources: orbital elements, gravitational parameters, radii and starting positions (mean anomaly at UT 0) from the KSP wiki planet pages, which list the stock values. The Duna synodic period computed here matches the wiki's 19,645,697 s. Checked 21 November 2026 for KSP 1.12.5.</p>
+
+<script>
+(function () {
+  var K = Calc.ksp, f = Calc.fmt, esc = Calc.esc;
+  var groups = { Kerbol: [], Kerbin: [], Eve: [], Duna: [], Jool: [] };
+  K.BODY_ORDER.forEach(function (b) { groups[K.BODIES[b].parent].push(b); });
+  var label = { Kerbol: "Planets", Kerbin: "Moons of Kerbin", Eve: "Moons of Eve", Duna: "Moons of Duna", Jool: "Moons of Jool" };
+  function opts(sel) {
+    return Object.keys(groups).filter(function (p) { return groups[p].length > 1; }).map(function (p) {
+      return '<optgroup label="' + label[p] + '">' + groups[p].map(function (b) {
+        return '<option value="' + b + '"' + (b === sel ? " selected" : "") + ">" + b + "</option>";
+      }).join("") + "</optgroup>";
+    }).join("");
+  }
+  document.getElementById("tw-from").innerHTML = opts("Kerbin");
+  document.getElementById("tw-to").innerHTML = opts("Duna");
+
+  function dur(s) {
+    var d = K.kDuration(s);
+    return f.int(d.days) + " days" + (d.hours >= 0.05 ? ", " + f.num(d.hours, 1) + " h" : "");
+  }
+  function date(t) {
+    var d = K.fromUT(t);
+    return "Year " + d.year + ", Day " + d.day + ", " + d.hour + ":" + (d.minute < 10 ? "0" : "") + d.minute;
+  }
+  function diagram(h, from, to) {
+    var rIn = 48, rOut = 92, c = 110;
+    var rf = h.outward ? rIn : rOut, rt = h.outward ? rOut : rIn;
+    var a = -h.phase * Math.PI / 180; // SVG y points down, so negate for counter-clockwise
+    var tx = c + rt * Math.cos(a), ty = c + rt * Math.sin(a);
+    var arcR = 28, large = Math.abs(h.phase) > 180 ? 1 : 0, sweep = h.phase > 0 ? 0 : 1;
+    return '<svg class="orbit-svg" viewBox="0 0 220 220" role="img" aria-label="' + esc(to) + " " + f.num(Math.abs(h.phase), 1) + (h.phase >= 0 ? " degrees ahead of " : " degrees behind ") + esc(from) + '">' +
+      '<circle class="o" cx="110" cy="110" r="' + rIn + '"/><circle class="o" cx="110" cy="110" r="' + rOut + '"/>' +
+      '<path class="t" d="M' + (c + arcR) + " " + c + " A" + arcR + " " + arcR + " 0 " + large + " " + sweep + " " + (c + arcR * Math.cos(a)) + " " + (c + arcR * Math.sin(a)) + '"/>' +
+      '<circle cx="110" cy="110" r="7" fill="#ffb347"/>' +
+      '<circle cx="' + (c + rf) + '" cy="110" r="6" style="fill:var(--accent)"/>' +
+      '<circle cx="' + tx.toFixed(1) + '" cy="' + ty.toFixed(1) + '" r="6" style="fill:var(--warn)"/>' +
+      '<text x="' + (c + rf + 9) + '" y="114">' + esc(from) + "</text>" +
+      '<text x="' + (tx + 9).toFixed(1) + '" y="' + (ty + 4).toFixed(1) + '">' + esc(to) + "</text></svg>";
+  }
+
+  Calc.ui("tw", function (v) {
+    if (v.from === v.to) return '<p class="note">Pick two different bodies.</p>';
+    var A = K.BODIES[v.from], B = K.BODIES[v.to];
+    if (A.parent !== B.parent) {
+      return '<p class="warn">' + esc(v.from) + " orbits " + esc(A.parent) + " but " + esc(v.to) + " orbits " + esc(B.parent) +
+        ". Pick two bodies with the same parent: two planets, or two moons of the same planet.</p>";
+    }
+    var h = K.hohmann(v.from, v.to, (v.alt || 0) * 1000);
+    var now = K.toUT(Math.max(1, v.year || 1), Math.min(426, Math.max(1, v.day || 1)), Math.max(0, v.hour || 0), 0);
+    var next = K.nextWindow(v.from, v.to, now), after = K.nextWindow(v.from, v.to, next + 1);
+    var dir = h.outward ? "prograde" : "retrograde", other = h.outward ? "retrograde" : "prograde";
+    var notes = [];
+    if (A.ecc >= 0.1 || B.ecc >= 0.1) notes.push("One of these orbits is noticeably oval, so the real best window and burn can differ by days and 100+ m/s. Fine-tune with a manoeuvre node.");
+    if (Math.abs(A.inc - B.inc) >= 1) notes.push("The orbits are tilted " + f.num(Math.abs(A.inc - B.inc), 2) + "° apart: plan a plane-change burn at the node.");
+    return Calc.table([
+      ["Phase angle", f.num(h.phase, 2) + "° (" + v.to + (h.phase >= 0 ? " ahead)" : " behind)"), true],
+      ["Next window", date(next), true],
+      ["Wait from now", dur(next - now)],
+      ["Window after that", date(after)],
+      ["Ejection burn", f.int(h.ejectionDv) + " m/s"],
+      ["Ejection angle", f.num(h.ejectionAngle, 1) + "° from " + v.from + "'s " + dir],
+      ["Burn point", f.num(h.afterCrossing, 1) + "° after passing " + v.from + "'s " + other + " side"],
+      ["Transfer time", dur(h.transferTime)],
+      ["Arrival speed vs " + v.to, f.int(h.vinfArrive) + " m/s"],
+      ["Current phase angle", f.num(K.phaseNow(v.from, v.to, now), 1) + "°"],
+      ["Windows repeat every", dur(h.synodic)]
+    ]) + diagram(h, v.from, v.to) +
+      '<p class="note">Positions when you should leave: the dashed arc is the phase angle. Orbits not to scale.</p>' +
+      notes.map(function (n) { return '<p class="warn">' + esc(n) + "</p>"; }).join("");
+  });
+})();
+</script>

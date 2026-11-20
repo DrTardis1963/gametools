@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{canonical}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="{{canonical}}">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#3d4fa8">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/style.css?v={{version}}">
+{{ads_head}}
+{{jsonld}}
+</head>
+<body>
+<header class="site">
+  <a class="brand" href="/"><img src="/assets/favicon.svg" alt="" width="28" height="28"> {{site_name}}</a>
+  <nav><a href="/#tools">Tools</a><a href="/about/">About</a></nav>
+</header>
+<main>
+{{content}}
+</main>
+<footer class="site">
+  <p>{{site_name}} is an unofficial fan site. It is not affiliated with or endorsed by Mojang Studios, Microsoft, Squad, Take-Two Interactive or Private Division. Game names are trademarks of their owners.</p>
+  <p><a href="/about/">About</a> · <a href="/privacy/">Privacy</a> · <a href="/contact/">Contact</a></p>
+  <p>© {{year}} {{owner}}</p>
+</footer>
+<script src="/assets/mc.js?v={{version}}"></script>
+<script src="/assets/ksp.js?v={{version}}"></script>
+<script src="/assets/ui.js?v={{version}}"></script>
+{{scripts}}
+</body>
+</html>

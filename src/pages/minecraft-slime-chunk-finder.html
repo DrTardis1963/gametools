@@ -1,0 +1,117 @@
+<!--{"title": "Minecraft Slime Chunk Finder (Java Seed and Bedrock)", "short": "Slime chunk finder", "description": "Check whether a chunk is a slime chunk and map the slime chunks around you, from your world seed in Java Edition, or for any Bedrock world. Runs in your browser.", "card": "Is this a slime chunk? A map of slime chunks around you, from a Java seed or for Bedrock.", "game": "Minecraft", "order": 5}-->
+<h1>Slime chunk finder</h1>
+<p class="version">Game data: Minecraft Java Edition 26.3 and Bedrock Edition</p>
+<p class="lede">Enter your position (and your seed, for Java). The map shows the slime chunks around you; tap a chunk to move there.</p>
+
+<div class="calc-card">
+<form class="calc" id="slime">
+  <div class="seg wide" role="radiogroup" aria-label="Edition">
+    <label><input type="radio" name="ed" value="java" checked> Java</label>
+    <label><input type="radio" name="ed" value="bedrock"> Bedrock</label>
+  </div>
+  <label class="wide" data-only="java">World seed <small>type <code>/seed</code> in game, or copy it from the world's settings</small>
+    <input type="text" name="seed" value="146008555" autocomplete="off" spellcheck="false">
+  </label>
+  <label>Your X <input type="number" name="x" value="24" step="1" inputmode="numeric"></label>
+  <label>Your Z <input type="number" name="z" value="-24" step="1" inputmode="numeric"></label>
+  <label>Map size
+    <select name="r">
+      <option value="4">9 × 9 chunks</option>
+      <option value="8" selected>17 × 17 chunks</option>
+      <option value="12">25 × 25 chunks</option>
+      <option value="20">41 × 41 chunks</option>
+    </select>
+  </label>
+</form>
+<div class="result" id="slime-out" aria-live="polite"></div>
+<div class="canvas-wrap"><canvas id="slime-canvas" role="img" aria-label="Map of slime chunks around you"></canvas></div>
+<div class="legend"><span><i style="background:var(--good)"></i>slime chunk</span><span><i style="border:2px solid var(--bad)"></i>your chunk</span><span>North is up. Heavy lines every 4 chunks (64 blocks) from 0, 0.</span></div>
+</div>
+{{ad}}
+
+<h2>What makes a slime chunk</h2>
+<p>The world is cut into chunks of 16 × 16 blocks. About one chunk in ten is a slime chunk, where slimes can spawn below Y = 40 at any light level and in any biome (swamps and mangrove swamps have their own surface spawning as well). To find your chunk, divide your X and Z by 16 and round down: block X = 24 is in chunk 1, and block X = −24 is in chunk −2.</p>
+<p><strong>Java Edition</strong> picks slime chunks from the world seed. The game mixes the seed with the chunk's two coordinates into a starting number for Java's random number generator, draws one number from 0 to 9, and makes the chunk a slime chunk if that number is 0. Only the lower 48 bits of the seed matter, and a seed that is text rather than a number is first turned into a number the same way the game does it. Change the seed and the slime chunks move.</p>
+<p><strong>Bedrock Edition</strong> ignores the seed. It seeds a different generator (a Mersenne Twister) from the chunk coordinates alone, so slime chunks are in the same places in every Bedrock world.</p>
+
+<h2>Worked example</h2>
+<p>In the Java world with seed <code>146008555</code>, standing at X = 24, Z = −24 puts you in chunk (1, −2): 24 ÷ 16 = 1.5 → 1, and −24 ÷ 16 = −1.5 → −2. That chunk <span class="good">is a slime chunk</span>. It covers blocks X 16 to 31 and Z −32 to −17. Chunk (−2, 2) is another; chunk (0, 0) is not.</p>
+<p>On Bedrock, chunk (3, 1), covering X 48 to 63 and Z 16 to 31, is a slime chunk in every world, and so is chunk (−61, −59). Chunk (0, 0) and chunk (−61, −60) are not.</p>
+
+<h2>Checking it in game</h2>
+<ul>
+<li>Press <strong>F3 + G</strong> (Java) to show chunk borders, and F3 to see your chunk number on the "Chunk" line.</li>
+<li>Dig a room below Y = 40 in the chunk, at least 3 blocks high, and wait. In Java, slimes spawn in a slime chunk at any light level. If none show up after a few minutes in a big lit-up area, check the seed: a server's seed is not the seed of your own single-player copy.</li>
+<li>Spawning needs a player 24 to 128 blocks away. Stand about 30 blocks above the room, not inside it.</li>
+<li>Join neighbouring slime chunks into one bigger farm floor when you can; the map makes clusters easy to see.</li>
+</ul>
+
+<h2>Is the seed safe to type here?</h2>
+<p>Yes. Everything is worked out in your browser; the seed is not sent anywhere. On a server, ask an admin before using its seed: some servers treat seed-based maps as cheating.</p>
+
+<p class="sources">Sources: the Java slime chunk check as published in the Minecraft Wiki "Slime" article; the Bedrock check as reverse-engineered by the community (credited to protolambda and jocopa3) and tested against the chunk results in the rbedrock project's tests. Checked 21 November 2026.</p>
+
+<script>
+(function () {
+  var mc = Calc.mc, f = Calc.fmt;
+  var form = document.getElementById("slime");
+  var canvas = document.getElementById("slime-canvas");
+  var view = null;
+
+  function isSlime(ed, seed, cx, cz) { return ed === "bedrock" ? mc.isSlimeChunkBedrock(cx, cz) : mc.isSlimeChunkJava(seed, cx, cz); }
+
+  Calc.ui("slime", function (v) {
+    var java = v.ed === "java";
+    form.querySelector("[data-only=java]").style.display = java ? "" : "none";
+    if (java && !String(v.seed).trim()) return '<p class="note">Type your world seed.</p>';
+    if (typeof BigInt !== "function") return '<p class="bad">This browser is too old for the slime chunk maths. Try a current Chrome, Firefox, Safari or Edge.</p>';
+    var seed = java ? mc.parseSeed(v.seed) : 0;
+    var x = Math.floor(v.x || 0), z = Math.floor(v.z || 0);
+    var cx = mc.chunkOf(x), cz = mc.chunkOf(z), R = parseInt(v.r, 10) || 8;
+    var cells = [], near = [];
+    for (var j = -R; j <= R; j++) {
+      var row = [];
+      for (var i = -R; i <= R; i++) {
+        var s = isSlime(v.ed, seed, cx + i, cz + j);
+        row.push(s);
+        if (s) near.push({ cx: cx + i, cz: cz + j, d: Math.sqrt(i * i + j * j) });
+      }
+      cells.push(row);
+    }
+    near.sort(function (a, b) { return a.d - b.d; });
+    view = { cells: cells, cx: cx, cz: cz, R: R };
+    requestAnimationFrame(draw);
+
+    var here = isSlime(v.ed, seed, cx, cz);
+    var seedNote = java && !/^-?\d+$/.test(String(v.seed).trim()) ? '<p class="note">Text seed: the game turns it into the number ' + seed + ".</p>" : "";
+    var list = near.slice(0, 5).map(function (n) {
+      return "<li>Chunk " + n.cx + ", " + n.cz + ": X " + n.cx * 16 + " to " + (n.cx * 16 + 15) + ", Z " + n.cz * 16 + " to " + (n.cz * 16 + 15) +
+        " (" + (n.d === 0 ? "you're in it" : f.num(n.d * 16, 0) + " blocks away") + ")</li>";
+    }).join("");
+    return Calc.table([
+      ["Chunk " + cx + ", " + cz + " (X " + cx * 16 + " to " + (cx * 16 + 15) + ", Z " + cz * 16 + " to " + (cz * 16 + 15) + ")",
+       here ? "Slime chunk" : "Not a slime chunk", true],
+      ["Slime chunks on this map", near.length + " of " + (2 * R + 1) * (2 * R + 1)]
+    ]) + seedNote + (list ? '<h3>Nearest slime chunks</h3><ul class="steps">' + list + "</ul>" : "");
+  });
+
+  function draw() {
+    if (!view) return;
+    var good = Calc.cssVar("--good");
+    var colors = view.cells.map(function (row) { return row.map(function (s) { return s ? good : null; }); });
+    Calc.drawGrid(canvas, colors, {
+      major: 4, originI: -(view.cx - view.R), originJ: -(view.cz - view.R), outline: [view.R, view.R]
+    });
+  }
+
+  canvas.addEventListener("click", function (e) {
+    if (!view) return;
+    var rect = canvas.getBoundingClientRect(), n = 2 * view.R + 1;
+    var i = Math.floor((e.clientX - rect.left) / (rect.width / n)), j = Math.floor((e.clientY - rect.top) / (rect.height / n));
+    form.x.value = (view.cx - view.R + i) * 16 + 8;
+    form.z.value = (view.cz - view.R + j) * 16 + 8;
+    form.dispatchEvent(new Event("change"));
+  });
+  window.addEventListener("resize", draw);
+})();
+</script>

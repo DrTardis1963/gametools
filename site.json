@@ -1,0 +1,11 @@
+{
+  "name": "Prime Mover Game Tools",
+  "tagline": "Free calculators for Minecraft and Kerbal Space Program",
+  "url": "https://games.primemoverindustries.com",
+  "contact": "hello@primemoverindustries.com",
+  "owner": "Prime Mover Industries",
+  "adsense": {
+    "client": "ca-pub-3886111503622765",
+    "enabled": false
+  }
+}

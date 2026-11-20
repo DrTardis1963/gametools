@@ -1,0 +1,169 @@
+<!--{"title": "KSP Delta-V and TWR Calculator for Multi-Stage Rockets", "short": "Delta-v and TWR calculator", "description": "Work out the delta-v, thrust-to-weight ratio and burn time of every stage of a Kerbal Space Program rocket, with stock engine data from KSP 1.12.5 and gravity for every planet and moon.", "card": "Delta-v, TWR and burn time for each stage, with every stock engine built in.", "game": "Kerbal Space Program", "order": 20}-->
+<h1>KSP delta-v and TWR calculator</h1>
+<p class="version">Game data: KSP 1.12.5 (stock)</p>
+<p class="lede">Plan a rocket before you build it: how much delta-v each stage gives, whether it can lift off, and how long each burn takes.</p>
+
+<style>
+fieldset.stage { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 12px; padding: 8px 12px 12px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px 12px; }
+fieldset.stage label:first-of-type { grid-column: 1 / -1; }
+fieldset.stage legend { font-weight: 700; padding: 0 4px; }
+fieldset.stage label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 0.95rem; }
+</style>
+<div class="calc-card">
+<form class="calc" id="dv">
+  <label>TWR measured on
+    <select name="body" id="dv-body"></select>
+  </label>
+  <label>Payload (t) <small>never dropped: pod, probe, lander</small>
+    <input type="number" name="payload" value="1" min="0" step="any" inputmode="decimal">
+  </label>
+  <div class="wide" id="stages"></div>
+  <div class="wide" style="display:flex;gap:8px;flex-wrap:wrap">
+    <button type="button" id="add-stage">Add a stage on top</button>
+    <button type="button" class="ghost" id="remove-stage">Remove top stage</button>
+  </div>
+</form>
+<div class="result" id="dv-out" aria-live="polite"></div>
+</div>
+{{ad}}
+
+<h2>How it works</h2>
+<div class="callout">Δv = Isp × 9.80665 × ln(m₀ ÷ m₁)<br>TWR = thrust ÷ (mass × surface gravity)</div>
+<p>The rocket equation says how much a stage can change your speed. <strong>Isp</strong> is the engine's efficiency in seconds; multiplying it by 9.80665 (the constant KSP uses) turns it into exhaust speed in m/s. <strong>m₀</strong> is the whole rocket's mass when the stage lights, <strong>m₁</strong> its mass when that stage's tanks run dry. Only the ratio matters, so tonnes are fine.</p>
+<p>Stages are listed in firing order. Each stage's own mass covers its tanks, engines, decoupler and anything else that is thrown away with it. While a stage burns it also carries every stage above it plus the payload, which is why the bottom stage has the hardest job.</p>
+<p><strong>Sea level or vacuum.</strong> Engines lose efficiency and thrust in air. Choose <em>Kerbin sea level</em> for a stage that lights on the launch pad and <em>Vacuum</em> for everything above about 25 km. A real ascent lands somewhere between the two figures for the first stage. In KSP an engine burns fuel at the same rate in any air pressure, so its thrust falls in step with its Isp.</p>
+<p><strong>TWR</strong> (thrust-to-weight ratio) above 1 means the stage can lift itself off that body. For a Kerbin launch, 1.2 to 1.6 at liftoff works well: lower wastes fuel fighting gravity, higher wastes it fighting drag. Upper stages can run far lower, since they push sideways in orbit rather than straight up.</p>
+
+<h2>Worked example: a two-stage Mun rocket</h2>
+<p>The form starts with this rocket. The payload is 1 t (a Mk1 pod, parachute and a few extras). The upper stage is a Terrier with an FL-T400 tank and a decoupler: 2.8 t full, 0.8 t empty. The lower stage is a Reliant with two FL-T800 tanks and a decoupler: 10.25 t full, 2.25 t empty.</p>
+<div class="table-wrap"><table class="ex">
+<tr><th>Stage</th><th class="n">m₀ → m₁ (t)</th><th class="n">Δv</th><th class="n">TWR</th><th class="n">Burn</th></tr>
+<tr><td>1: Reliant, sea level</td><td class="n">14.05 → 6.05</td><td class="n">2,190 m/s</td><td class="n">1.49</td><td class="n">101 s</td></tr>
+<tr><td>2: Terrier, vacuum</td><td class="n">3.80 → 1.80</td><td class="n">2,528 m/s</td><td class="n">1.61</td><td class="n">113 s</td></tr>
+</table></div>
+<p>The first stage: 265 × 9.80665 × ln(14.05 ÷ 6.05) = <strong>2,190 m/s</strong> at sea level, or 2,561 m/s if it were all in vacuum. Its sea-level thrust is 205.16 kN, so liftoff TWR is 205.16 ÷ (14.05 × 9.81) = <strong>1.49</strong>, rising to 3.46 as the tanks empty. The Terrier then gives 345 × 9.80665 × ln(3.8 ÷ 1.8) = <strong>2,528 m/s</strong>, for <strong>4,718 m/s</strong> in total.</p>
+<p>That is enough to reach low Kerbin orbit (about 3,400 m/s) with roughly 1,300 m/s left for the Mun: a transfer burn (about 860 m/s) and capture into a low orbit (about 310 m/s), but not a landing and return. Add a third stage or a bigger upper tank before you aim for the surface.</p>
+
+<h2>Rough delta-v budget from Kerbin</h2>
+<p>Approximate figures players have mapped out for the stock system. Your rocket and piloting will vary, so keep a 5-10% margin.</p>
+<div class="table-wrap"><table class="ex">
+<tr><th>Leg</th><th class="n">Δv (m/s)</th></tr>
+<tr><td>Kerbin surface to low orbit (80 km)</td><td class="n">about 3,400</td></tr>
+<tr><td>Low Kerbin orbit to Mun encounter</td><td class="n">about 860</td></tr>
+<tr><td>Capture into low Mun orbit</td><td class="n">about 310</td></tr>
+<tr><td>Low Mun orbit to the surface</td><td class="n">about 580</td></tr>
+<tr><td>Low Kerbin orbit to Minmus encounter</td><td class="n">about 930</td></tr>
+<tr><td>Low Kerbin orbit to Duna transfer</td><td class="n">about 1,060 (<a href="/ksp-transfer-window/">work it out</a>)</td></tr>
+</table></div>
+
+<h2>What this leaves out</h2>
+<ul>
+<li><strong>Boosters burning alongside the core.</strong> This treats stages as firing one after another. For side boosters that burn together with a centre engine (including asparagus staging), the game's own staging readout in the VAB is more accurate.</li>
+<li><strong>Drag and gravity losses.</strong> Δv is what the fuel can do, not what survives a clumsy ascent. A steep or late gravity turn can cost hundreds of m/s.</li>
+<li><strong>Other air pressures.</strong> Eve's surface (5 atm) is far worse than Kerbin's sea level; Duna's thin air (0.07 atm) is close to vacuum. Only 1 atm and vacuum are offered here.</li>
+<li><strong>Mixed engines in one stage.</strong> Pick the engine that dominates, or work out a combined Isp with "custom".</li>
+</ul>
+
+<h2>Tips</h2>
+<ul>
+<li>Solid boosters fill in their own full and empty mass when you pick them; add the mass of any decouplers and nose cones.</li>
+<li>The Nerv's 800 s Isp is huge in vacuum but it is heavy (3 t) and weak (60 kN). It pays off for big interplanetary stages, not small landers.</li>
+<li>For a lander, set "TWR measured on" to the body you'll land on. Mun gravity is a sixth of Kerbin's, so a TWR of 2-3 there is easy.</li>
+</ul>
+<p class="sources">Sources: engine thrust and Isp from the stock part configs as listed on the KSP wiki part pages; body radius and gravitational parameter from the KSP wiki planet pages. Checked 21 November 2026 for KSP 1.12.5. Delta-v budget figures are approximate community values.</p>
+
+<script>
+(function () {
+  var K = Calc.ksp, f = Calc.fmt, esc = Calc.esc;
+  var form = document.getElementById("dv"), box = document.getElementById("stages");
+  var bodySel = document.getElementById("dv-body");
+  bodySel.innerHTML = K.BODY_ORDER.map(function (b) {
+    return '<option value="' + b + '"' + (b === "Kerbin" ? " selected" : "") + ">" + b + " (" + f.num(K.surfaceGravity(b), 2) + " m/s²)</option>";
+  }).join("");
+  var engineOpts = K.ENGINES.map(function (e) { return '<option value="' + e.id + '">' + esc(e.name) + "</option>"; }).join("") +
+    '<option value="custom">Custom engine</option>';
+
+  var stages = [
+    { engine: "reliant", count: 1, wet: 10.25, dry: 2.25, env: "asl", thrust: 240, ispAsl: 265, ispVac: 310 },
+    { engine: "terrier", count: 1, wet: 2.8, dry: 0.8, env: "vac", thrust: 60, ispAsl: 85, ispVac: 345 }
+  ];
+
+  function field(i, key, label, val, extra) {
+    return '<label>' + label + '<input type="number" name="s' + i + "_" + key + '" value="' + val + '" min="0" step="any" inputmode="decimal"' + (extra || "") + "></label>";
+  }
+  function draw() {
+    box.innerHTML = stages.map(function (s, i) {
+      var custom = s.engine === "custom";
+      return '<fieldset class="stage"><legend>Stage ' + (i + 1) + (i === 0 ? " (fires first)" : "") + "</legend>" +
+        '<label>Engine<select name="s' + i + '_engine">' + engineOpts.replace('value="' + s.engine + '"', 'value="' + s.engine + '" selected') + "</select></label>" +
+        field(i, "count", "Engines", s.count, ' step="1"') +
+        field(i, "wet", "Stage mass full (t)", s.wet) +
+        field(i, "dry", "Stage mass empty (t)", s.dry) +
+        '<label>Burns in<select name="s' + i + '_env"><option value="vac"' + (s.env === "vac" ? " selected" : "") + '>Vacuum</option><option value="asl"' + (s.env === "asl" ? " selected" : "") + ">Kerbin sea level (1 atm)</option></select></label>" +
+        (custom ? field(i, "thrust", "Thrust in vacuum (kN)", s.thrust) + field(i, "ispVac", "Isp in vacuum (s)", s.ispVac) + field(i, "ispAsl", "Isp at sea level (s)", s.ispAsl) : "") +
+        "</fieldset>";
+    }).join("");
+  }
+  function sync() {
+    var v = Calc.values(form);
+    stages = stages.map(function (s, i) {
+      var n = {};
+      for (var k in s) n[k] = v["s" + i + "_" + k] !== undefined ? v["s" + i + "_" + k] : s[k];
+      return n;
+    });
+  }
+  draw();
+
+  form.addEventListener("change", function (e) {
+    var m = /^s(\d+)_(engine|count)$/.exec(e.target.name || "");
+    if (!m) return;
+    sync();
+    var s = stages[+m[1]], eng = K.engine(s.engine);
+    if (eng && eng.solid && s.count > 0) { s.wet = +(eng.mass * s.count).toFixed(4); s.dry = +(eng.dry * s.count).toFixed(4); }
+    if (m[2] === "engine") {
+      if (eng) { s.thrust = eng.thrust; s.ispAsl = eng.ispAsl; s.ispVac = eng.ispVac; }
+      draw();
+    } else if (eng && eng.solid) draw();
+  });
+
+  var update = Calc.ui("dv", function (v) {
+    sync();
+    var g = K.surfaceGravity(v.body);
+    var list = stages.map(function (s) {
+      var eng = s.engine === "custom" ? { thrust: s.thrust || 0, ispAsl: s.ispAsl || 0, ispVac: s.ispVac || 0 } : K.engine(s.engine);
+      return { wet: s.wet || 0, dry: s.dry || 0, count: s.count || 0, engine: eng, env: s.env };
+    });
+    for (var i = 0; i < list.length; i++) {
+      if (!(list[i].wet > 0) || !(list[i].dry > 0) || list[i].dry > list[i].wet) {
+        return '<p class="warn">Stage ' + (i + 1) + ": empty mass must be above 0 and no more than full mass.</p>";
+      }
+    }
+    var r = K.stack(list, v.payload || 0, g);
+    var rows = r.stages.map(function (s, i) {
+      var twr = s.twrStart < 1 ? '<span class="bad">' + f.num(s.twrStart, 2) + "</span>" : f.num(s.twrStart, 2);
+      return "<tr><td>" + (i + 1) + '</td><td class="n">' + f.int(s.dv) + ' m/s</td><td class="n">' + twr + " → " + f.num(s.twrEnd, 2) +
+        '</td><td class="n">' + (isFinite(s.burnTime) ? f.num(s.burnTime, 0) + " s" : "-") + "</td></tr>";
+    }).join("");
+    var warn = r.stages.length && r.stages[0].twrStart < 1 && stages[0].env === "asl"
+      ? '<p class="bad">Stage 1 can\'t lift off ' + esc(v.body) + ": its TWR is below 1.</p>" : "";
+    return Calc.table([
+      ["Total delta-v", f.int(r.totalDv) + " m/s", true],
+      ["Mass at ignition", f.num(r.liftoffMass, 2) + " t"],
+      ["Total burn time", f.num(r.totalTime, 0) + " s"]
+    ]) + warn +
+      '<div class="table-wrap"><table class="ex"><tr><th>Stage</th><th class="n">Δv</th><th class="n">TWR on ' + esc(v.body) + '</th><th class="n">Burn</th></tr>' + rows + "</table></div>";
+  });
+
+  document.getElementById("add-stage").addEventListener("click", function () {
+    sync();
+    stages.push({ engine: "terrier", count: 1, wet: 2.8, dry: 0.8, env: "vac", thrust: 60, ispAsl: 85, ispVac: 345 });
+    draw(); update();
+  });
+  document.getElementById("remove-stage").addEventListener("click", function () {
+    sync();
+    if (stages.length > 1) stages.pop();
+    draw(); update();
+  });
+})();
+</script>

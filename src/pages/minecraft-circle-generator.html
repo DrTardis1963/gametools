@@ -1,0 +1,135 @@
+<!--{"title": "Minecraft Circle, Oval and Sphere Generator (Block by Block)", "short": "Circle and sphere generator", "description": "Block-by-block plans for circles, ovals, spheres and domes in Minecraft, layer by layer, with block counts and stacks. Filled or hollow, thin or thick walls.", "card": "Block-by-block circles, ovals, spheres and domes, layer by layer, with block counts.", "game": "Minecraft", "order": 3}-->
+<h1>Circle, oval and sphere generator</h1>
+<p class="version">Works in any Minecraft version, Java or Bedrock</p>
+<p class="lede">A block plan for round builds, with the number of blocks you need. For spheres and domes, step through the layers from the bottom up.</p>
+
+<div class="calc-card">
+<form class="calc" id="circ">
+  <div class="seg wide" role="radiogroup" aria-label="Shape">
+    <label><input type="radio" name="shape" value="circle" checked> Circle or oval</label>
+    <label><input type="radio" name="shape" value="sphere"> Sphere</label>
+    <label><input type="radio" name="shape" value="dome"> Dome</label>
+  </div>
+  <label>Width (blocks) <small>the diameter</small>
+    <input type="number" name="w" value="15" min="1" max="200" step="1" inputmode="numeric">
+  </label>
+  <label data-only="circle">Height (blocks) <small>same as width for a circle</small>
+    <input type="number" name="h" value="15" min="1" max="200" step="1" inputmode="numeric">
+  </label>
+  <label>Fill
+    <select name="fill">
+      <option value="thin">Outline, thin (blocks touch at corners)</option>
+      <option value="thick">Outline, thick (no diagonal gaps)</option>
+      <option value="filled">Filled</option>
+    </select>
+  </label>
+  <label class="wide" data-only="layers">Layer <output id="circ-layer-label"></output>
+    <input type="range" name="layer" value="1" min="1" max="15" step="1" id="circ-layer">
+  </label>
+</form>
+<div class="result" id="circ-out" aria-live="polite"></div>
+<div class="canvas-wrap"><canvas id="circ-canvas" role="img" aria-label="Block plan"></canvas></div>
+<div class="legend"><span><i style="background:var(--accent)"></i>block</span><span><i style="background:var(--warn)"></i>centre</span><span>Heavy lines every 5 blocks from the centre</span></div>
+</div>
+{{ad}}
+
+<h2>How the shape is worked out</h2>
+<div class="callout">A block is part of the shape if its centre is inside the circle: (x ÷ r)² + (z ÷ r)² ≤ 1, measured from the middle of the shape to the middle of the block.</div>
+<p>For a sphere the same test runs in three dimensions, with the block's height as a third term. For an oval, width and height get their own radius. An outline keeps only the blocks that have an empty neighbour:</p>
+<ul>
+<li><strong>Thin</strong> counts only the four side neighbours, so neighbouring blocks may only touch at a corner. It uses the fewest blocks and looks smoothest from above, but mobs, water and players can squeeze through the diagonal gaps.</li>
+<li><strong>Thick</strong> also counts the four corner neighbours, so every block joins the next one along a face. Use it for walls, tanks and anything that has to hold.</li>
+</ul>
+
+<h2>Odd or even width?</h2>
+<p>An odd width (15, 21, 31) has a single centre block, which is easy to mark and line up with a door or beacon. An even width (14, 20, 32) has its centre on a corner between four blocks, so there are two middle rows. Both are correct; odd widths are easier to build from a centre post.</p>
+
+<h2>Worked example: small circles, block by block</h2>
+<p>A circle 5 blocks wide has radius 2.5, and block centres sit 0, 1 and 2 blocks from the middle. The corner block (2, 2) is √8 ≈ 2.83 from the middle, outside the circle; the block beside it (2, 1) is √5 ≈ 2.24 from the middle, inside. So a filled 5-wide circle is the 5 × 5 square minus its four corners: <strong>21 blocks</strong>. The same rule gives 9 blocks for width 3 (a full 3 × 3 square: the corner is √2 ≈ 1.41 from the middle, inside radius 1.5) and 12 for width 4. A hollow sphere 15 blocks wide takes <strong>530 blocks</strong> with thin walls (8 stacks and 18 more), 890 with thick walls, and 1,791 filled.</p>
+
+<h2>Building tips</h2>
+<ul>
+<li><strong>Start with four markers.</strong> Put a block at the centre, then count out half the width in each of the four directions. Build one quarter, then mirror it.</li>
+<li><strong>Use the heavy grid lines.</strong> They are every 5 blocks from the centre, so you can count "5, 10, then 2 more" instead of counting single blocks.</li>
+<li><strong>For spheres, build the middle layer first.</strong> It's the widest one and fixes the size. Then work up and down, a layer at a time, with the layer slider.</li>
+<li><strong>Domes</strong> are the top half of a sphere. With an odd width, the dome includes the middle layer.</li>
+</ul>
+
+<p class="sources">The shapes are pure geometry, not game data, so they work in every version. Block counts are checked in this site's tests.</p>
+
+<script>
+(function () {
+  var mc = Calc.mc, f = Calc.fmt;
+  var canvas = document.getElementById("circ-canvas");
+  var slider = document.getElementById("circ-layer");
+  var label = document.getElementById("circ-layer-label");
+  var form = document.getElementById("circ");
+  var last = null;
+
+  function toggle(shape) {
+    Array.prototype.forEach.call(form.querySelectorAll("[data-only]"), function (el) {
+      var on = el.dataset.only === "circle" ? shape === "circle" : shape !== "circle";
+      el.style.display = on ? "" : "none";
+    });
+  }
+
+  function draw(grid, w, h) {
+    var accent = Calc.cssVar("--accent"), warn = Calc.cssVar("--warn");
+    var ci = (w - 1) / 2, cj = (h - 1) / 2;
+    var colors = grid.map(function (row, j) {
+      return row.map(function (on, i) {
+        var centre = Math.abs(i - ci) < 0.6 && Math.abs(j - cj) < 0.6;
+        return on ? (centre ? warn : accent) : (centre ? warn : null);
+      });
+    });
+    Calc.drawGrid(canvas, colors, { major: 5, originI: Math.floor(w / 2), originJ: Math.floor(h / 2) });
+  }
+
+  Calc.ui("circ", function (v) {
+    var shape = v.shape;
+    toggle(shape);
+    var w = Math.max(1, Math.min(200, Math.floor(v.w || 1)));
+    var hollow = v.fill !== "filled", thick = v.fill === "thick";
+    var rows;
+    if (shape === "circle") {
+      var h = Math.max(1, Math.min(200, Math.floor(v.h || w)));
+      var grid = mc.ellipse(w, h);
+      if (hollow) grid = mc.outline(grid, thick);
+      var n = mc.countBlocks(grid);
+      last = [grid, w, h];
+      rows = [["Blocks", f.int(n), true], ["Stacks of 64", stackText(n)], ["Size", w + " × " + h]];
+    } else {
+      if (w > 120) w = 120;
+      var first = shape === "dome" ? Math.floor(w / 2) : 0;
+      var layers = w - first;
+      slider.max = layers;
+      var layer = Math.max(1, Math.min(layers, Math.floor(v.layer || 1)));
+      if (+slider.value !== layer) slider.value = layer;
+      label.textContent = layer + " of " + layers;
+      var g = mc.sphereLayer(w, first + layer - 1, hollow, thick);
+      var nl = mc.countBlocks(g);
+      var total = mc.sphereCount(w, hollow, thick, first);
+      last = [g, w, w];
+      rows = [["Blocks in the whole " + shape, f.int(total), true], ["Stacks of 64", stackText(total)],
+              ["Blocks in layer " + layer, f.int(nl)], ["Layer width", rowWidth(g) + " blocks"]];
+    }
+    requestAnimationFrame(function () { draw(last[0], last[1], last[2]); });
+    return Calc.table(rows);
+  });
+
+  function stackText(n) {
+    var s = mc.stacks(n);
+    if (!s.stacks) return "under 1 stack";
+    var t = s.stacks + " stack" + (s.stacks > 1 ? "s" : "") + (s.rest ? " + " + s.rest : "");
+    return s.shulkers >= 1 ? t + " (" + f.num(s.shulkers, 1) + " shulker boxes)" : t;
+  }
+
+  function rowWidth(g) {
+    var best = 0;
+    g.forEach(function (row) { var a = row.indexOf(true), b = row.lastIndexOf(true); if (a >= 0) best = Math.max(best, b - a + 1); });
+    return best;
+  }
+
+  window.addEventListener("resize", function () { if (last) draw(last[0], last[1], last[2]); });
+})();
+</script>

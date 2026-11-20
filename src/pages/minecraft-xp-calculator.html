@@ -1,0 +1,88 @@
+<!--{"title": "Minecraft XP Calculator: Points Needed Between Levels", "short": "XP level calculator", "description": "How many experience points you need to get from one Minecraft level to another, how many Bottles o' Enchanting that is, and what level a number of points gives you.", "card": "XP points between any two levels, in bottles o' enchanting, and the level a point total reaches.", "game": "Minecraft", "order": 4}-->
+<h1>Minecraft XP calculator</h1>
+<p class="version">Game data: Minecraft Java Edition 26.3 (Bedrock uses the same level curve)</p>
+<p class="lede">Experience points needed to go from your level to the one you want, and what that means in bottles o' enchanting.</p>
+
+<div class="calc-card">
+<h2 style="margin-top:0">Points from one level to another</h2>
+<form class="calc" id="xp">
+  <label>Current level
+    <input type="number" name="from" value="0" min="0" max="10000" step="1" inputmode="numeric">
+  </label>
+  <label>Progress through it (%) <small>how full the green bar is</small>
+    <input type="number" name="pct" value="0" min="0" max="99" step="1" inputmode="numeric">
+  </label>
+  <label>Target level
+    <input type="number" name="to" value="30" min="0" max="10000" step="1" inputmode="numeric">
+  </label>
+</form>
+<div class="result" id="xp-out" aria-live="polite"></div>
+</div>
+
+<div class="calc-card">
+<h2 style="margin-top:0">Level from a number of points</h2>
+<form class="calc" id="pts">
+  <label>Total XP points
+    <input type="number" name="points" value="1395" min="0" step="1" inputmode="numeric">
+  </label>
+</form>
+<div class="result" id="pts-out" aria-live="polite"></div>
+</div>
+{{ad}}
+
+<h2>The level curve</h2>
+<p>Each level takes more points than the one before, and the step gets steeper twice: at level 16 and level 31.</p>
+<div class="table-wrap"><table class="ex">
+<thead><tr><th>From level</th><th>Points to the next level</th><th>Total points to reach level L</th></tr></thead>
+<tbody>
+<tr><td>0 to 15</td><td>2 × level + 7</td><td>L² + 6L</td></tr>
+<tr><td>16 to 30</td><td>5 × level − 38</td><td>2.5L² − 40.5L + 360</td></tr>
+<tr><td>31 and up</td><td>9 × level − 158</td><td>4.5L² − 162.5L + 2220</td></tr>
+</tbody></table></div>
+<p>The total formulas apply from the start of each band (levels 0-16, 17-31 and 32 up), because the total at level L is the sum of every step below it.</p>
+
+<h2>Worked example: level 0 to 30</h2>
+<p>Level 30 is the most an enchanting table charges for its best offer. The total to reach it is 2.5 × 30² − 40.5 × 30 + 360 = 2,250 − 1,215 + 360 = <strong>1,395 points</strong>. A Bottle o' Enchanting drops 3 to 11 points, 7 on average, so that is about 1,395 ÷ 7 ≈ <strong>200 bottles</strong>.</p>
+<p>Going from 30 to 31 alone takes 5 × 30 − 38 = <strong>112 points</strong>, more than levels 0 to 7 put together (7 + 9 + 11 + 13 + 15 + 17 + 19 = 91). That's why it pays to spend levels as you earn them rather than bank them.</p>
+
+<h2>Spending levels well</h2>
+<ul>
+<li><strong>Enchanting table:</strong> it needs you to <em>have</em> up to 30 levels but only takes 1 to 3. Use it at level 30, then earn the few levels back.</li>
+<li><strong>Anvil:</strong> it takes every level it charges, so each job is cheapest in points when you have just enough levels. The <a href="/minecraft-enchantment-order-calculator/">enchantment order calculator</a> keeps each job small.</li>
+<li><strong>Dying:</strong> you drop only 7 points per level, and never more than 100. At level 30 you lose 1,395 points but can pick up only 100 of them, which is enough for level 7.</li>
+<li><strong>Mending</strong> uses experience orbs before they reach your bar, while a Mending item you're holding or wearing is damaged.</li>
+</ul>
+
+<h2>What it leaves out</h2>
+<p>Points from one source vary: bottles drop 3 to 11, and mobs and ores give random amounts. The bottle count is an average, so expect a few more or less. The level curve itself is exact and is the same in Java and Bedrock.</p>
+
+<p class="sources">Sources: experience formulas, the Bottle o' Enchanting range and the death drop as given in the Minecraft Wiki "Experience" article, checked 21 November 2026 (Java Edition 26.3).</p>
+
+<script>
+(function () {
+  var mc = Calc.mc, f = Calc.fmt;
+  Calc.ui("xp", function (v) {
+    var from = Math.max(0, Math.floor(v.from || 0)), to = Math.max(0, Math.floor(v.to || 0));
+    var pct = Math.max(0, Math.min(99, v.pct || 0)) / 100;
+    var start = mc.xpAt(from, pct), end = mc.xpForLevel(to);
+    var need = end - start;
+    if (need <= 0) {
+      return Calc.table([["You're already past level " + to, f.int(-need) + " points to spare", true]]);
+    }
+    return Calc.table([
+      ["XP points needed", f.int(need), true],
+      ["Bottles o' enchanting (7 points on average)", "about " + f.int(Math.ceil(need / 7))],
+      ["Points to the next level", f.int(mc.xpToNext(from) * (1 - pct))],
+      ["Total points at level " + to, f.int(end)],
+      ["If you die at level " + to + ", you drop", mc.deathDrop(to) + " points"]
+    ]);
+  });
+  Calc.ui("pts", function (v) {
+    var p = Math.max(0, Math.floor(v.points || 0)), r = mc.levelFromXp(p);
+    return Calc.table([
+      ["Level", r.level + " and " + f.pct(r.fraction, 0) + " of the bar", true],
+      ["Points into that level", f.int(r.into) + " of " + f.int(mc.xpToNext(r.level))]
+    ]);
+  });
+})();
+</script>

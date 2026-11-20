@@ -1,0 +1,182 @@
+<!--{"title": "KSP CommNet Antenna Range and Signal Strength Calculator", "short": "CommNet range calculator", "description": "Work out a Kerbal Space Program craft's combined antenna power, its maximum range to the Deep Space Network or another craft, and its signal strength at any distance. Stock KSP 1.12.5 antennas.", "card": "Antenna power, range to the DSN or another craft, and signal strength at any distance.", "game": "Kerbal Space Program", "order": 22}-->
+<h1>KSP CommNet range calculator</h1>
+<p class="version">Game data: KSP 1.12.5 (stock)</p>
+<p class="lede">Will your probe keep its link home? Add up its antennas, pick what it talks to, and see the range and signal strength at any distance.</p>
+
+<style>
+.ant-row { display: grid; grid-template-columns: 1fr 88px; gap: 8px; margin: 0 0 8px; }
+.ant-row label { font-weight: 600; font-size: 0.95rem; display: flex; flex-direction: column; gap: 4px; }
+</style>
+<div class="calc-card">
+<form class="calc" id="cn">
+  <fieldset class="wide" style="border:0;padding:0;margin:0">
+    <legend style="font-weight:700;margin-bottom:6px">Your craft's antennas</legend>
+    <div id="rows-a"></div>
+  </fieldset>
+  <div class="wide">
+    <span style="font-weight:600;font-size:0.95rem">Talking to</span>
+    <div class="seg" role="radiogroup" aria-label="Talking to">
+      <label><input type="radio" name="target" value="1"> DSN level 1</label>
+      <label><input type="radio" name="target" value="2"> DSN level 2</label>
+      <label><input type="radio" name="target" value="3" checked> DSN level 3</label>
+      <label><input type="radio" name="target" value="craft"> Another craft</label>
+    </div>
+  </div>
+  <fieldset class="wide" id="craft-b" style="border:0;padding:0;margin:0">
+    <legend style="font-weight:700;margin-bottom:6px">Other craft's antennas</legend>
+    <div id="rows-b"></div>
+    <label class="check"><input type="checkbox" name="bRelay" checked> It's a relay (only its relay antennas count)</label>
+  </fieldset>
+  <label>Distance
+    <input type="number" name="dist" value="30" min="0" step="any" inputmode="decimal">
+  </label>
+  <label>Unit
+    <select name="unit"><option value="1e3">km</option><option value="1e6">Mm (1,000 km)</option><option value="1e9" selected>Gm (1,000,000 km)</option></select>
+  </label>
+  <label class="wide">Or pick a distance from Kerbin
+    <select id="cn-preset"><option value="">Choose…</option></select>
+  </label>
+  <label>Range modifier <small>difficulty: Normal 1, Moderate 0.8, Hard 0.65</small>
+    <input type="number" name="rm" value="1" min="0" step="0.05" inputmode="decimal">
+  </label>
+  <label>DSN modifier <small>difficulty setting, usually 1</small>
+    <input type="number" name="dm" value="1" min="0" step="0.05" inputmode="decimal">
+  </label>
+</form>
+<div class="result" id="cn-out" aria-live="polite"></div>
+</div>
+{{ad}}
+
+<div class="calc-card">
+<h2 style="margin-top:0">Signal through relays</h2>
+<p class="note">A relayed signal is each hop's strength multiplied together. Enter each hop's strength in %.</p>
+<form class="calc" id="ch">
+  <label>Hop 1 (%) <input type="number" name="h1" value="80" min="0" max="100" step="any" inputmode="decimal"></label>
+  <label>Hop 2 (%) <input type="number" name="h2" value="90" min="0" max="100" step="any" inputmode="decimal"></label>
+  <label>Hop 3 (%) <small>leave blank if none</small><input type="number" name="h3" value="" min="0" max="100" step="any" inputmode="decimal"></label>
+</form>
+<div class="result" id="ch-out" aria-live="polite"></div>
+</div>
+
+<h2>How CommNet range works</h2>
+<p>Every antenna has a <strong>power rating</strong>, a plain number such as 500k for a Communotron 16 or 100G for a Communotron 88-88. Two points can talk when the distance between them is less than the geometric mean of their ratings:</p>
+<div class="callout">Maximum range = √(power A × power B)</div>
+<p>The Deep Space Network counts as one end of the link, with a power of 2G, 50G or 250G depending on the level of your Tracking Station. A strong ground station helps a weak probe a lot, which is why upgrading the Tracking Station is often cheaper than adding dishes.</p>
+<h3>Several antennas on one craft</h3>
+<div class="callout">Craft power = strongest × (sum of all ÷ strongest) ^ average exponent</div>
+<p>Antennas stack with diminishing returns. The exponent is an average of each antenna's "combinability exponent", weighted by power. Almost every antenna uses 0.75. The two exceptions are the Communotron 16, at 1 (it stacks in full), and the 16-S, at 0 (extra copies add nothing). The built-in antenna in pods and probe cores doesn't stack at all.</p>
+<h3>Signal strength</h3>
+<div class="callout">x = 1 − distance ÷ maximum range<br>Signal = (3 − 2x) × x²</div>
+<p>Signal is 100% up close and falls along an S-shaped curve to 0% at maximum range. It is exactly 50% at half the range, and it only reads a full 100% within about 4% of the range. A stronger signal also gets more science out of transmitted experiments, and through relays the strengths multiply hop by hop.</p>
+
+<h2>Worked example: a Duna probe</h2>
+<p>A probe carries two HG-55 dishes (15G each). Combined, it has 15G × (30G ÷ 15G)^0.75 = <strong>25.23G</strong>. Talking to a level 3 Tracking Station (250G), its range is √(25.23G × 250G) = <strong>79.4 Gm</strong>. Kerbin and Duna are never more than 35.4 Gm apart, so the link always holds. At 30 Gm, x = 1 − 30 ÷ 79.4 = 0.62, giving a signal of <strong>68%</strong>.</p>
+<p>With a level 2 Tracking Station (50G), the range drops to <strong>35.5 Gm</strong>. That barely covers Duna at its farthest, and at 30 Gm the signal is just <strong>6%</strong>. On Hard difficulty (range modifier 0.65), the level 3 range falls to 64.0 Gm, still plenty.</p>
+<p>Relays multiply: if the probe reaches a relay at 80% and the relay reaches Kerbin at 90%, the signal home is 0.8 × 0.9 = <strong>72%</strong>.</p>
+
+<h2>What this leaves out</h2>
+<ul>
+<li><strong>Line of sight.</strong> Planets and moons block signals. A probe behind Duna has no link whatever its range; that is what relays in high orbits are for.</li>
+<li><strong>Which antennas a relay uses.</strong> A relay passes other craft's signals using only its relay antennas (HG-5, RA-2, RA-15, RA-100), but its own link home uses all its antennas. Tick "It's a relay" when the other craft is relaying for you.</li>
+<li><strong>Ground stations.</strong> With "extra ground stations" turned off, only the KSC has the full DSN rating.</li>
+<li><strong>Plasma blackout</strong> during re-entry, if that difficulty option is on.</li>
+<li><strong>Making History and Breaking Ground antennas.</strong> Only antennas from the base game are listed.</li>
+</ul>
+<h2>Tips</h2>
+<ul>
+<li>For the Mun and Minmus, a single Communotron 16 reaches a level 2 Tracking Station (158 Mm) easily.</li>
+<li>Three relays in the same orbit, 120° apart, keep each other in view around any planet and cover almost every point on the surface.</li>
+<li>Direct antennas (DTS-M1, HG-55, 88-88) can't relay. A relay antenna also works as a direct one, so a relay satellite needs nothing else.</li>
+</ul>
+<p class="sources">Sources: antenna power ratings, combinability exponents, DSN levels, difficulty modifiers and the signal curve as documented on the KSP wiki CommNet page and part pages; the calculator reproduces the wiki's range tables and its 71% Jool example. Checked 21 November 2026 for KSP 1.12.5.</p>
+
+<script>
+(function () {
+  var K = Calc.ksp, f = Calc.fmt, esc = Calc.esc;
+  var opts = '<option value="">None</option>' + K.ANTENNAS.map(function (a) {
+    return '<option value="' + a.id + '">' + esc(a.name) + " (" + power(a.power) + ")</option>";
+  }).join("");
+  function power(p) {
+    if (p >= 1e9) return f.num(p / 1e9, 2) + "G";
+    if (p >= 1e6) return f.num(p / 1e6, 2) + "M";
+    if (p >= 1e3) return f.num(p / 1e3, 2) + "k";
+    return f.num(p, 0);
+  }
+  function dist(m) {
+    if (m >= 1e9) return f.num(m / 1e9, 2) + " Gm";
+    if (m >= 1e6) return f.num(m / 1e6, 2) + " Mm";
+    if (m >= 1e3) return f.num(m / 1e3, 2) + " km";
+    return f.num(m, 0) + " m";
+  }
+  function rows(prefix, defaults) {
+    return defaults.map(function (d, i) {
+      var n = prefix + (i + 1);
+      return '<div class="ant-row"><label>Antenna ' + (i + 1) + '<select name="' + n + '">' +
+        opts.replace('value="' + d[0] + '"', 'value="' + d[0] + '" selected') + "</select></label>" +
+        '<label>How many<input type="number" name="' + n + 'n" value="' + d[1] + '" min="0" step="1" inputmode="numeric"></label></div>';
+    }).join("");
+  }
+  document.getElementById("rows-a").innerHTML = rows("a", [["hg55", 2], ["", 1], ["", 1]]);
+  document.getElementById("rows-b").innerHTML = rows("b", [["ra15", 1], ["", 1], ["", 1]]);
+
+  var preset = document.getElementById("cn-preset");
+  var places = ["Mun", "Minmus", "Moho", "Eve", "Duna", "Dres", "Jool", "Eeloo"];
+  preset.innerHTML += '<option value="84159286">Edge of Kerbin\'s sphere of influence (84.2 Mm)</option>' + places.map(function (p) {
+    var d = K.distanceFromKerbin(p);
+    if (d.min === d.max) return '<option value="' + d.max + '">' + p + " (" + dist(d.max) + ")</option>";
+    return '<option value="' + d.min + '">' + p + ", closest (" + dist(d.min) + ")</option>" +
+      '<option value="' + d.max + '">' + p + ", farthest (" + dist(d.max) + ")</option>";
+  }).join("");
+  var form = document.getElementById("cn");
+  preset.addEventListener("change", function () {
+    if (!preset.value) return;
+    var m = +preset.value, unit = m >= 1e9 ? "1e9" : "1e6";
+    form.elements.unit.value = unit;
+    form.elements.dist.value = +(m / +unit).toFixed(3);
+    form.dispatchEvent(new Event("input"));
+  });
+
+  function list(v, prefix) {
+    var out = [];
+    for (var i = 1; i <= 3; i++) if (v[prefix + i]) out.push({ id: v[prefix + i], count: v[prefix + i + "n"] || 0 });
+    return out;
+  }
+
+  Calc.ui("cn", function (v) {
+    document.getElementById("craft-b").hidden = v.target !== "craft";
+    var rm = v.rm >= 0 ? v.rm : 1, dm = v.dm >= 0 ? v.dm : 1;
+    var pa = K.vesselPower(list(v, "a")) * rm;
+    if (!(pa > 0)) return '<p class="note">Add at least one antenna.</p>';
+    var pb, other;
+    if (v.target === "craft") {
+      pb = K.vesselPower(list(v, "b"), v.bRelay) * rm;
+      other = "Other craft's power";
+      if (!(pb > 0)) return '<p class="note">' + (v.bRelay ? "Give the other craft a relay antenna (HG-5 or RA series)." : "Give the other craft an antenna.") + "</p>";
+    } else {
+      pb = K.DSN[v.target] * dm;
+      other = "DSN level " + v.target + " power";
+    }
+    var range = K.linkRange(pa, pb);
+    var d = (v.dist || 0) * +v.unit;
+    var s = K.signal(d, range);
+    var cls = s >= 0.5 ? "good" : s > 0 ? "warn" : "bad";
+    return Calc.table([
+      ["Maximum range", dist(range), true],
+      ["Signal at " + dist(d), d >= range ? "No link (0%)" : f.pct(s, 0), true],
+      ["Your craft's power", power(pa)],
+      [other, power(pb)],
+      ["Full 100% signal within", dist(K.distanceForSignal(0.995, range))],
+      ["75% signal within", dist(K.distanceForSignal(0.75, range))],
+      ["50% signal within", dist(K.distanceForSignal(0.5, range))]
+    ]) + '<p class="' + cls + '">' + (d >= range ? "Out of range: move closer, add antennas or use a relay."
+      : s >= 0.5 ? "Solid link." : "Link holds, but the signal is weak.") + "</p>";
+  });
+
+  Calc.ui("ch", function (v) {
+    var hops = [v.h1, v.h2, v.h3].filter(function (x) { return isFinite(x); });
+    if (!hops.length) return '<p class="note">Enter at least one hop.</p>';
+    var s = hops.reduce(function (acc, x) { return acc * Math.max(0, Math.min(100, x)) / 100; }, 1);
+    return Calc.table([["Signal through " + hops.length + (hops.length === 1 ? " hop" : " hops"), f.pct(s, 0), true]]);
+  });
+})();
+</script>

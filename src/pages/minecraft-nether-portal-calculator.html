@@ -1,0 +1,125 @@
+<!--{"title": "Minecraft Nether Portal Calculator and Link Checker", "short": "Nether portal calculator", "description": "Convert Overworld and Nether coordinates for Minecraft portals, then check which portal each one will link to, so new portals don't connect to the wrong place. Java and Bedrock.", "card": "Convert coordinates both ways, and check which portal each portal will really link to.", "game": "Minecraft", "order": 1}-->
+<h1>Nether portal calculator and link checker</h1>
+<p class="version">Game data: Minecraft Java Edition 26.3 and Bedrock Edition</p>
+<p class="lede">Find where to build the matching portal, then check your whole portal network for portals that will link to the wrong one.</p>
+
+<div class="calc-card">
+<h2 style="margin-top:0">1. Convert coordinates</h2>
+<form class="calc" id="conv">
+  <div class="seg wide" role="radiogroup" aria-label="Direction">
+    <label><input type="radio" name="dir" value="o2n" checked> Overworld → Nether</label>
+    <label><input type="radio" name="dir" value="n2o"> Nether → Overworld</label>
+  </div>
+  <label>X <input type="number" name="x" value="1000" step="1" inputmode="numeric"></label>
+  <label>Y <small>height, unchanged</small><input type="number" name="y" value="70" step="1" inputmode="numeric"></label>
+  <label>Z <input type="number" name="z" value="-500" step="1" inputmode="numeric"></label>
+</form>
+<div class="result" id="conv-out" aria-live="polite"></div>
+</div>
+
+<div class="calc-card">
+<h2 style="margin-top:0">2. Check which portals link</h2>
+<p class="note">One portal per line: an optional name, then X Y Z. Use the coordinates of a portal block (stand in the portal and read F3). Commas are fine.</p>
+<form class="calc" id="net">
+  <div class="seg wide" role="radiogroup" aria-label="Edition">
+    <label><input type="radio" name="ed" value="java" checked> Java</label>
+    <label><input type="radio" name="ed" value="bedrock"> Bedrock</label>
+  </div>
+  <label class="wide">Overworld portals
+    <textarea name="ow" rows="4" spellcheck="false">Home: 1000 70 -500
+Farm: 1100 64 -500</textarea>
+  </label>
+  <label class="wide">Nether portals
+    <textarea name="ne" rows="4" spellcheck="false">Home: 125 70 -63</textarea>
+  </label>
+</form>
+<div class="result" id="net-out" aria-live="polite"></div>
+</div>
+{{ad}}
+
+<h2>How the conversion works</h2>
+<div class="callout">Overworld → Nether: X ÷ 8 and Z ÷ 8, rounded down. Nether → Overworld: X × 8 and Z × 8. Y stays the same.</div>
+<p>One block walked in the Nether covers eight blocks of the Overworld, but only sideways: height is not scaled. "Rounded down" means towards negative infinity, so −37.5 becomes −38, not −37. That detail is why some calculators put portals with negative coordinates one block off.</p>
+
+<h2>How the game picks a portal</h2>
+<p>When you step into a portal, the game converts your position to the other dimension and looks for existing portal blocks around that point. It searches a square, not a circle, through the full height of the world:</p>
+<div class="table-wrap"><table class="ex">
+<thead><tr><th>Arriving in</th><th class="n">Java: blocks each way</th><th class="n">Bedrock: blocks each way</th></tr></thead>
+<tbody>
+<tr><td>Overworld</td><td class="n">128</td><td class="n">128</td></tr>
+<tr><td>Nether</td><td class="n">16</td><td class="n">128</td></tr>
+</tbody></table></div>
+<p>If it finds portal blocks, it takes the closest one by straight-line distance, <em>including height</em>. If it finds none, it builds a new portal near the converted point (within 16 blocks sideways). This is why two Overworld portals a hundred blocks apart can both lead to the same Nether portal: 100 Overworld blocks is only 12.5 Nether blocks, well inside the 16-block search.</p>
+
+<h2>Worked example: a farm portal that goes to the wrong place</h2>
+<p>Your home portal is at <strong>1000, 70, −500</strong> in the Overworld. Its Nether point is 1000 ÷ 8 = 125 and −500 ÷ 8 = −62.5, rounded down to −63, so you build its partner at <strong>125, 70, −63</strong>.</p>
+<p>Later you build a farm portal at <strong>1100, 64, −500</strong>, but don't build anything in the Nether. Its Nether point is 1100 ÷ 8 = 137.5 → 137, and −63 again: <strong>137, 64, −63</strong>. The home Nether portal is 12 blocks away along X, inside Java's 16-block search, and about 13.4 blocks away in a straight line, so <span class="bad">the farm portal takes you to your home Nether portal</span>. Coming back, you arrive at home, not the farm.</p>
+<p>The fix is to build the farm's own Nether portal at 137, 64, −63 before you use it. Now each portal is the closest one to its partner's converted point, and both pairs link both ways. The checker above starts with this example; add <code>Farm: 137 64 -63</code> to the Nether list to see it fixed.</p>
+
+<h2>Tips for a portal network that behaves</h2>
+<ul>
+<li><strong>Build the Nether side yourself</strong> at the exact converted coordinates before the game builds one for you.</li>
+<li><strong>Portals at least 136 blocks apart can't interfere</strong> (in Java). 136 Overworld blocks is 17 Nether blocks, just outside the 16-block search, and 17 Nether blocks back is 136 Overworld blocks, outside the 128-block search. Closer is fine, but then each Nether portal must be at its exact converted point.</li>
+<li><strong>Watch the height.</strong> The game counts Y in its distance, so a Nether portal that is close sideways but 60 blocks higher can lose to one further away at the right height.</li>
+<li><strong>Big portals have many blocks.</strong> The game measures to the nearest portal <em>block</em>, not the portal's centre. For large portals, check with the block nearest the other portal.</li>
+<li><strong>Bedrock searches much further in the Nether</strong> (128 blocks, not 16). An Overworld portal without its own Nether partner can grab any Nether portal up to 128 blocks from its converted point, which is 1,024 Overworld blocks. On Bedrock, always build each Nether portal yourself, exactly at its converted point, so it is the closest one.</li>
+</ul>
+
+<h2>What this checker leaves out</h2>
+<p>It treats each portal as one block, assumes nothing blocks the search (it doesn't know about chunks or the world border), and doesn't model where a brand-new portal would actually be placed, which depends on the terrain. For checking your own network, that's usually enough; if a result surprises you, enter the portal block closest to the other portal.</p>
+
+<p class="sources">Sources: game behaviour as documented in the Minecraft Wiki "Nether Portal" article (portal search and coordinate conversion), checked 21 November 2026 for Java Edition 26.3 and current Bedrock Edition.</p>
+
+<script>
+(function () {
+  var mc = Calc.mc, f = Calc.fmt;
+  Calc.ui("conv", function (v) {
+    var x = v.x || 0, y = isFinite(v.y) ? v.y : 64, z = v.z || 0;
+    var toN = v.dir === "o2n";
+    var c = toN ? mc.toNether(x, z) : mc.toOverworld(x, z);
+    var dim = toN ? "the_nether" : "overworld";
+    return Calc.table([
+      [toN ? "Build the Nether portal at" : "Build the Overworld portal at", c.x + ", " + y + ", " + c.z, true],
+      ["X", (toN ? x + " ÷ 8 = " + f.num(x / 8, 3) + " → " : x + " × 8 = ") + c.x],
+      ["Z", (toN ? z + " ÷ 8 = " + f.num(z / 8, 3) + " → " : z + " × 8 = ") + c.z]
+    ]) + '<p class="note">Teleport there (Java, cheats on): <code>/execute in minecraft:' + dim + " run tp @s " + c.x + " " + y + " " + c.z + "</code></p>";
+  });
+
+  function parse(text) {
+    var out = [];
+    text.split(/\r?\n/).forEach(function (line, n) {
+      var nums = line.match(/-?\d+(\.\d+)?/g);
+      if (!nums || nums.length < 3) return;
+      var last = nums.slice(-3).map(Number);
+      var name = line.slice(0, line.lastIndexOf(nums[nums.length - 3])).replace(/[:,\s]+$/, "").trim();
+      out.push({ name: name || "#" + (n + 1), x: Math.floor(last[0]), y: Math.floor(last[1]), z: Math.floor(last[2]) });
+    });
+    return out;
+  }
+
+  Calc.ui("net", function (v) {
+    var ow = parse(v.ow || ""), ne = parse(v.ne || "");
+    if (!ow.length && !ne.length) return '<p class="note">Add a portal: a name and X Y Z on each line.</p>';
+    var r = mc.portalNetwork(ow, ne, v.ed);
+    function rows(list, res, from, others) {
+      return list.map(function (p, i) {
+        var t = res[i], d = t.dest, where = d.x + ", " + d.y + ", " + d.z;
+        var to, cls;
+        if (t.link >= 0) {
+          var o = others[t.link];
+          to = "goes to <strong>" + Calc.esc(o.name) + "</strong> (" + f.num(t.dist, 1) + " blocks from " + where + ")";
+          cls = t.twoWay ? "good" : "warn";
+          to += t.twoWay ? ' <span class="good">✓ links both ways</span>' : ' <span class="warn">⚠ ' + Calc.esc(o.name) + " leads somewhere else</span>";
+        } else {
+          to = '<span class="bad">no portal within ' + t.radius + " blocks of " + where + "</span>: the game builds a new one near there";
+        }
+        return "<li><strong>" + Calc.esc(p.name) + "</strong> (" + from + " " + p.x + ", " + p.y + ", " + p.z + ") " + to + "</li>";
+      }).join("");
+    }
+    var bad = r.overworld.concat(r.nether).filter(function (t) { return !t.twoWay; }).length;
+    var head = bad ? '<p class="warn">' + bad + " portal" + (bad > 1 ? "s don't" : " doesn't") + " link back to the portal it leads to.</p>"
+                   : '<p class="good">Every portal links both ways.</p>';
+    return head + '<ul class="steps">' + rows(ow, r.overworld, "Overworld", ne) + rows(ne, r.nether, "Nether", ow) + "</ul>";
+  });
+})();
+</script>
