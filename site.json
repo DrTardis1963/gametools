@@ -6,6 +6,7 @@
   "owner": "Prime Mover Industries",
   "adsense": {
     "client": "ca-pub-3886111503622765",
-    "enabled": false
+    "enabled": true,
+    "slot": ""
   }
 }

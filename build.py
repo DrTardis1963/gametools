@@ -50,13 +50,14 @@ def page_url(site, slug):
 
 
 def ad_slot(site):
-    # Empty until AdSense approves the site. With Auto ads on, Google picks
-    # placements itself; this div only marks a spot that keeps ads off the form.
-    if not site["adsense"]["enabled"]:
+    # Auto ads (the head script) place ads by themselves. A fixed spot here needs an
+    # ad unit's slot id from AdSense ("slot" in site.json); without one, leave it out.
+    ads = site["adsense"]
+    if not ads["enabled"] or not ads.get("slot"):
         return ""
-    client = site["adsense"]["client"]
     return (f'<div class="ad-slot"><ins class="adsbygoogle" style="display:block" '
-            f'data-ad-client="{client}" data-ad-format="auto" data-full-width-responsive="true"></ins>'
+            f'data-ad-client="{ads["client"]}" data-ad-slot="{ads["slot"]}" '
+            f'data-ad-format="auto" data-full-width-responsive="true"></ins>'
             f'<script>(adsbygoogle=window.adsbygoogle||[]).push({{}});</script></div>')
 
 
