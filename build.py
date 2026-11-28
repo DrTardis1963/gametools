@@ -102,7 +102,14 @@ def build():
                 "applicationCategory": "GameApplication", "operatingSystem": "Any",
                 "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
             }) + "</script>"
-        body = (p["body"].replace("{{calc_list}}", grid)
+        if p["slug"] == "index":
+            # Site name in Google results (supported for subdomains; markup on the home page).
+            jsonld += '<script type="application/ld+json">' + json.dumps({
+                "@context": "https://schema.org", "@type": "WebSite", "name": site["name"],
+                "alternateName": [site["url"].split("://", 1)[1]], "url": site["url"] + "/"}) + "</script>"
+        # data-nosnippet keeps Google from quoting a calculator's live result box in search snippets.
+        body = (p["body"].replace('<div class="calc-card">', '<div class="calc-card" data-nosnippet>')
+                .replace("{{calc_list}}", grid)
                 .replace("{{ad}}", ad_slot(site))
                 .replace("{{contact}}", site["contact"])
                 .replace("{{site_name}}", site["name"]))
